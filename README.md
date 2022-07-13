@@ -11,6 +11,7 @@ In Case of Images, it can assist the HTML canvas to draw and sample images, by r
 
 Generates Getters and Setters for the inserted collection of Variables.
 > Variables must end with a ';' for it to be considered a complete variable.
+> 
 > Spaces are not allowed(like most of programming languages).
 
 Examples:
