@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<!--Made By: PaulOthar-->
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File To URL Converter</title>
+
+    <style>
+        ::-webkit-scrollbar {
+            display: none;
+        }
+
+        body {
+            background-color: #15202B;
+            display: grid;
+            grid-template-rows: 1fr;
+            grid-template-columns: 1fr;
+            font-family: monospace;
+        }
+
+        div {
+            display: grid;
+            grid-template-rows: 1fr 20fr;
+            grid-template-columns: 1fr;
+        }
+
+        .button {
+            background-color: #1D2A35;
+            color: white;
+            text-align: center;
+            font-weight: bold;
+            transition-duration: 0.5s;
+        }
+
+        .button:hover {
+            background-color: #2A3741;
+        }
+
+        tr {
+            display: grid;
+            grid-template-columns: 1fr 1fr 5fr;
+            color: white;
+            text-align: center;
+        }
+
+        td,
+        th {
+            border: 1px solid #38444D;
+        }
+
+        th {
+            background-color: #15202B;
+        }
+
+        td {
+            background-color: #1D2A35;
+            overflow-x: hidden;
+        }
+
+        .untouchable {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div>
+        <button class="button" onclick="Input.click()">Insert Files</button>
+        <table class="untouchable" id="table">
+            <tr>
+                <th>Copy</th>
+                <th>File Name</th>
+                <th>File URL</th>
+            </tr>
+        </table>
+    </div>
+</body>
+
+<script>
+    function updateHeight() {
+        document.body.style.height = window.innerHeight - 20 + "px";
+    }
+    window.onresize = updateHeight;
+    updateHeight();
+
+    let table = document.getElementById("table");
+
+    let Input = document.createElement("INPUT");
+    Input.setAttribute("type", "file");
+
+    let Reader = new FileReader();
+    let Rows = new Array();
+    let LastRowCount = 0;
+
+    Input.onchange = function () {
+        for (let i = 0; i < this.files.length; i++) {
+            Rows.push(table.insertRow());
+            Rows[Rows.length - 1].insertCell().innerText = "Copy";
+            Rows[Rows.length - 1].insertCell().innerText = this.files[i].name;
+            Reader.readAsDataURL(this.files[i]);
+        }
+    }
+
+    Reader.onloadend = function () {
+        Rows[LastRowCount].insertCell().innerText = this.result;
+        let ths = Rows[LastRowCount];
+        Rows[LastRowCount].cells[0].classList.add("button");
+        Rows[LastRowCount].cells[0].onclick = function () {
+            navigator.clipboard.writeText(ths.cells[2].innerText);
+        }
+        LastRowCount++;
+    }
+</script>
+
+</html>

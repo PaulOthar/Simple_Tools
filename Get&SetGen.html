@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<!--Made By: PaulOthar-->
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Getter And Setter Generator For Javascript</title>
+    <style>
+        ::-webkit-scrollbar {
+            display: none;
+        }
+
+        .untouchable {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        body {
+            background-color: #15202B;
+            display: grid;
+            grid-template-rows: 1fr;
+            grid-template-columns: 1fr;
+            font-family: monospace;
+        }
+
+        div {
+            display: grid;
+            grid-template-rows: 1fr 20fr;
+            grid-template-columns: 1fr 1fr;
+            padding: 10px 10px;
+            color: white;
+        }
+
+        div label {
+            background-color: #1D2A35;
+            border: 1px solid #15202B;
+            text-align: center;
+        }
+
+        div textarea {
+            color: white;
+            background-color: #1D2A35;
+            border: 1px solid #15202B;
+            resize: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div>
+        <label class="untouchable">Input</label>
+        <label class="untouchable">Output</label>
+        <textarea rows="10" cols="50" id="in"></textarea>
+        <textarea rows="10" cols="50" id="out"></textarea>
+    </div>
+</body>
+
+<script>
+    function updateHeight() {
+        document.body.style.height = window.innerHeight - 20 + "px";
+    }
+    window.onresize = updateHeight;
+    updateHeight();
+
+    let in_txt = document.getElementById('in');
+    let out_txt = document.getElementById('out');
+
+    function makegetset(variable) {
+        let output = new String();
+        let altered_variable_name = variable.charAt(0).toUpperCase() + variable.slice(1);
+        output += `get${altered_variable_name}(){\n\treturn this.${variable};\n}\n`;
+        output += `set${altered_variable_name}(${variable}){\n\tthis.${variable} = ${variable};\n}\n`;
+
+        return output;
+    }
+
+    function process(input) {
+        let output = new String();
+
+        for (let i = 0, variable = new String(), small_comentary = 0, big_comentary = 0; i < input.length; i++) {
+            if (small_comentary) {
+                if (input[i] == '\n') {
+                    small_comentary = 0
+                }
+                else {
+                    continue;
+                }
+            }
+            if (big_comentary) {
+                if (input[i] == '/' && input[i - 1] == '*') {
+                    big_comentary = 0;
+                }
+                else {
+                    continue;
+                }
+            }
+            switch (input[i]) {
+                case '\t':
+                    break;
+                case ' ':
+                    break;
+                case '/':
+                    if (input[i - 1] == '/' || input[i + 1] == '/') {
+                        small_comentary = 1;
+                    }
+                    else if (input[i + 1] == '*') {
+                        big_comentary = 1;
+                    }
+                    break;
+                case '\n':
+                    break;
+                case ';':
+                    output += makegetset(variable);
+                    output += '\n';
+                    variable = new String();
+                    break;
+                default:
+                    variable += input[i];
+                    break;
+            }
+
+        }
+
+        return output;
+    }
+
+    in_txt.onchange = function () {
+        out_txt.value = process(in_txt.value);
+    }
+</script>
+
+</html>
