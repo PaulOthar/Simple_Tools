@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<!--Made By: PaulOthar-->
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SimpleTextToImage</title>
+
+    <style>
+        ::-webkit-scrollbar {
+            display: none;
+        }
+
+        .untouchable {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        .input {
+            margin: -1px 0 0 -1px;
+            border: 1px solid #293f55;
+            background-color: #2e4457;
+            color: white;
+            text-align: center;
+            font-weight: bold;
+            transition-duration: 0.5s;
+        }
+
+        .input:hover {
+            background-color: #2A3741;
+        }
+
+        body {
+            background-color: #15202B;
+            display: grid;
+            grid-template-rows: 1fr 1fr;
+            grid-template-columns: 1fr;
+            font-family: monospace;
+            color: white;
+            overflow-x: scroll;
+        }
+
+        canvas,
+        img {
+            border: 2px solid black;
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        div div {
+            padding: 5px 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <div style="background-color: #1d2a35;border: 1px solid #2A3741;display: block;">
+        <div style="display: grid;grid-template-columns: 1fr 1fr;text-align: center;font-weight: bold;">
+            <input id="input" type="text" class="input" style="background-color: #15202B;">
+            <button class="input" id="do">Generate</button>
+        </div>
+        <hr>
+        <div style="display: grid;grid-template-columns: 1fr 4fr;text-align: center;font-weight: bold;">
+            <label>Size</label>
+            <input type="number" id="size" value="50" class="input">
+            <label>Font Style</label>
+            <select id="fontstyle" class="input">
+                <option value="normal" style="font-style: normal;">normal</option>
+                <option value="italic" style="font-style: italic;">italic</option>
+            </select>
+            <label>Font Variant</label>
+            <select id="fontvariant" class="input">
+                <option value="normal" style="font-variant: normal;">normal</option>
+                <option value="small-caps" style="font-variant: small-caps;">small-caps</option>
+            </select>
+            <label>Font Weight</label>
+            <select id="fontweight" class="input">
+                <option value="normal" style="font-weight: normal;">normal</option>
+                <option value="bold" style="font-weight: bold;">bold</option>
+                <option value="bolder" style="font-weight: bolder;">bolder</option>
+                <option value="900" style="font-weight: 900;">Mega Bold</option>
+                <option value="lighter" style="font-weight: lighter;">lighter</option>
+            </select>
+            <label>Font Family</label>
+            <select id="fontfamily" class="input">
+                <option value="Arial" style="font-family: Arial;">Arial</option>
+                <option value="Verdana" style="font-family: Verdana;">Verdana</option>
+                <option value="Times New Roman" style="font-family: Times New Roman;">Times New Roman</option>
+                <option value="Courier New" style="font-family: Courier New;">Courier New</option>
+                <option value="serif" style="font-family: serif;">serif</option>
+                <option value="sans-serif" style="font-family: sans-serif;">sans-serif</option>
+            </select>
+        </div>
+        <hr>
+        <div style="display: grid;grid-template-columns: 1fr;text-align: center;">
+            <input type="color" class="input" style="width: 100%;" id="colsel">
+        </div>
+        <div style="display: grid;grid-template-columns: 1fr 4fr;text-align: center;font-weight: bold;">
+            <label for="red" style="color: red;">Red</label>
+            <input type="range" min="0" max="255" id="red" value="0">
+            <label for="green" style="color: green;">Green</label>
+            <input type="range" min="0" max="255" id="green" value="0">
+            <label for="blue" style="color: blue;">Blue</label>
+            <input type="range" min="0" max="255" id="blue" value="0">
+
+            <label>Result</label>
+            <label id="result">#000000</label>
+        </div>
+        <hr>
+        <div style="display: grid;grid-template-columns: 1fr;text-align: center;">
+            <input type="color" class="input" style="width: 100%;" id="colsel_bg">
+        </div>
+        <div style="display: grid;grid-template-columns: 1fr 4fr;text-align: center;font-weight: bold;">
+            <label>Mode</label>
+            <button id="mode" class="input">Transparent</button>
+
+            <label style="color: red;">Red</label>
+            <input type="range" min="0" max="255" id="red_bg" value="0">
+            <label style="color: green;">Green</label>
+            <input type="range" min="0" max="255" id="green_bg" value="0">
+            <label style="color: blue;">Blue</label>
+            <input type="range" min="0" max="255" id="blue_bg" value="0">
+
+            <label>Result</label>
+            <label id="result_bg">#000000</label>
+        </div>
+    </div>
+    <img id="img">
+</body>
+
+<script>
+    function updateHeight() {
+        document.body.style.height = window.innerHeight - 20 + "px";
+    }
+    window.onresize = updateHeight;
+    updateHeight();
+
+    let inpt = document.getElementById('input');
+    let btn = document.getElementById('do');
+
+    let fontstyle = document.getElementById('fontstyle');
+    let fontvariant = document.getElementById('fontvariant');
+    let fontweight = document.getElementById('fontweight');
+    let fontsize = document.getElementById('size');
+    let fontfamily = document.getElementById('fontfamily');
+
+    let colsel = document.getElementById('colsel');
+    let r = document.getElementById('red');
+    let g = document.getElementById('green');
+    let b = document.getElementById('blue');
+    let result = document.getElementById('result');
+
+    let bg = 0;//0 : Transparent | 1 : Colored
+
+    let mode = document.getElementById('mode');
+
+    let colselbg = document.getElementById('colsel_bg');
+    let rbg = document.getElementById('red_bg');
+    let gbg = document.getElementById('green_bg');
+    let bbg = document.getElementById('blue_bg');
+    let resultbg = document.getElementById('result_bg');
+
+    function getRGBHex(red, green, blue) {
+        let output = new String();
+        output += "#";
+
+        red = parseInt(red);
+        green = parseInt(green);
+        blue = parseInt(blue);
+
+        if (red < 16) {
+            output += "0" + red.toString(16);
+        }
+        else {
+            output += red.toString(16);
+        }
+
+        if (green < 16) {
+            output += "0" + green.toString(16);
+        }
+        else {
+            output += green.toString(16);
+        }
+
+        if (blue < 16) {
+            output += "0" + blue.toString(16);
+        }
+        else {
+            output += blue.toString(16);
+        }
+
+        return output;
+
+    }
+
+    function getHexRGB(Hex) {
+        let r = Hex[1] + Hex[2];
+        let g = Hex[3] + Hex[4];
+        let b = Hex[5] + Hex[6];
+        return [parseInt(r, 16), parseInt(g, 16), parseInt(b, 16)];
+    }
+
+    let canvas = document.createElement("canvas");
+    let context = canvas.getContext('2d');
+    context.font = "50px arial";
+    context.textBaseline = "top";
+
+    function buildFont(style,variant,weight,size,family){
+        return `${style} ${variant} ${weight} ${size}px ${family}`;
+    }
+
+    function updateFont(){
+        context.font = buildFont(fontstyle.value,fontvariant.value,fontweight.value,fontsize.value,fontfamily.value);
+    }
+
+    fontstyle.oninput = updateFont;
+    fontvariant.oninput = updateFont;
+    fontweight.oninput = updateFont;
+    fontsize.oninput = updateFont;
+    fontfamily.oninput = updateFont;
+
+    let seccanvas = document.createElement("canvas");
+
+    let img = document.getElementById('img');
+
+    function updateColor() {
+        let hex = getRGBHex(r.value, g.value, b.value);
+        colsel.value = hex;
+        result.innerText = `(Hex : ${hex})(RGB : ${r.value},${g.value},${b.value})`;
+        result.style.backgroundColor = hex;
+        context.strokeStyle = hex;
+    }
+
+    colsel.oninput = function () {
+        let rgb = getHexRGB(colsel.value);
+        r.value = rgb[0];
+        g.value = rgb[1];
+        b.value = rgb[2];
+        result.innerText = `(Hex : ${colsel.value})(RGB : ${r.value},${g.value},${b.value})`;
+        result.style.backgroundColor = colsel.value;
+        context.strokeStyle = colsel.value;
+    }
+    r.oninput = updateColor;
+    g.oninput = updateColor;
+    b.oninput = updateColor;
+
+    updateColor();
+
+    mode.onclick = function () {
+        bg = !bg;
+        if (bg) {
+            mode.innerText = "Colored";
+        }
+        else {
+            mode.innerText = "Transparent";
+        }
+    }
+
+    function updateBackgroundColor() {
+        let hex = getRGBHex(rbg.value, gbg.value, bbg.value);
+        colselbg.value = hex;
+        resultbg.innerText = `(Hex : ${hex})(RGB : ${rbg.value},${gbg.value},${bbg.value})`;
+        resultbg.style.backgroundColor = hex;
+        context.fillStyle = hex;
+    }
+
+    colselbg.oninput = function () {
+        let rgb = getHexRGB(colselbg.value);
+        rbg.value = rgb[0];
+        gbg.value = rgb[1];
+        bbg.value = rgb[2];
+        resultbg.innerText = `(Hex : ${colselbg.value})(RGB : ${rbg.value},${gbg.value},${bbg.value})`;
+        resultbg.style.backgroundColor = colselbg.value;
+        context.fillStyle = colselbg.value;
+    }
+    rbg.oninput = updateBackgroundColor;
+    gbg.oninput = updateBackgroundColor;
+    bbg.oninput = updateBackgroundColor;
+
+    updateBackgroundColor();
+
+    btn.onclick = function () {
+        if (!inpt.value) {
+            return 0;
+        }
+        let size = context.measureText(inpt.value);
+        let width = size.actualBoundingBoxRight + size.actualBoundingBoxLeft+2;
+        let height = size.actualBoundingBoxDescent + size.actualBoundingBoxAscent+2;
+        //let height =  size.fontBoundingBoxDescent - size.fontBoundingBoxAscent;
+        console.log(size);
+        seccanvas.width = width;
+        seccanvas.height = height;
+        seccanvas.getContext('2d').strokeStyle = context.strokeStyle;
+        seccanvas.getContext('2d').font = context.font;
+        seccanvas.getContext('2d').textBaseline = "top";
+
+        if (bg) {
+            seccanvas.getContext('2d').fillStyle = context.fillStyle;
+            seccanvas.getContext('2d').fillText(inpt.value, 0 + size.actualBoundingBoxLeft + 1, 0 + size.actualBoundingBoxAscent + 1);
+        }
+        seccanvas.getContext('2d').strokeText(inpt.value, 0 + size.actualBoundingBoxLeft + 1, 0+size.actualBoundingBoxAscent + 1);
+        //context.strokeRect(0,0,width,height);
+
+        img.src = seccanvas.toDataURL();
+    }
+
+
+
+</script>
+
+</html>
