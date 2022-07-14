@@ -17,3 +17,6 @@ Generates Getters and Setters for the inserted collection of Variables.
 Examples:
 ![image](https://user-images.githubusercontent.com/64809360/178833892-c60ffaa1-d34f-4842-9a0b-5ffee04e90e8.png)
 
+# SimpleTextToImage
+
+Converts a Simple String into a Tight Image, Ideal For Logos, or For Saving Unicode Characters as Images
