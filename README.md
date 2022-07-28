@@ -20,3 +20,6 @@ Examples:
 # SimpleTextToImage
 
 Converts a Simple String into a Tight Image, Ideal For Logos, or For Saving Unicode Characters as Images
+
+Example:
+![image](https://user-images.githubusercontent.com/64809360/181603622-70634dac-0f75-4e09-a3f4-30e94ac6d070.png)
