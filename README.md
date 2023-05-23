@@ -23,3 +23,9 @@ Converts a Simple String into a Tight Image, Ideal For Logos, or For Saving Unic
 
 Example:
 ![image](https://user-images.githubusercontent.com/64809360/181603622-70634dac-0f75-4e09-a3f4-30e94ac6d070.png)
+
+# EasySprites
+
+Easily Generates Floor,Wall and Pillar Sprites based on any image!
+
+![image](https://github.com/PaulOthar/Simple_Tools/assets/64809360/3aaf2add-17ea-420b-9715-a1251308f08d)
