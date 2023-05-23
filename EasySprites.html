@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EasySprites</title>
+    <style>
+        ::-webkit-scrollbar {
+            display: none;
+        }
+
+        .untouchable {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        .input {
+            margin: -1px 0 0 -1px;
+            border: 1px solid #293f55;
+            background-color: #2e4457;
+            color: white;
+            text-align: center;
+            font-weight: bold;
+            transition-duration: 0.5s;
+        }
+
+        .input:hover {
+            background-color: #2A3741;
+        }
+
+        body {
+            background-color: #15202B;
+            display: grid;
+            grid-template-rows: 0.1fr 0.01fr 1fr;
+            grid-template-columns: 1fr;
+            font-family: monospace;
+            color: white;
+            overflow-x: scroll;
+        }
+
+        canvas,
+        img {
+            border: 2px solid black;
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        div div {
+            padding: 5px 5px;
+        }
+
+        .button {
+            background-color: #1D2A35;
+            color: white;
+            text-align: center;
+            font-weight: bold;
+            transition-duration: 0.5s;
+        }
+
+        .button:hover {
+            background-color: #2A3741;
+        }
+    </style>
+</head>
+
+<body>
+    <div
+        style="background-color: #1d2a35;border: 1px solid #2A3741;display: grid;grid-template-columns: 1fr 4fr;text-align: center;font-weight: bold;">
+        <label for="fileButton">Image File</label>
+        <button class="button" onclick="Input.click()">Insert File</button>
+
+        <label for="scale">Scale</label>
+        <input class="input" type="spinner" id="scale" value="16">
+
+        <label for="tile">Tile</label>
+        <select id="tile" class="input">
+            <option value="floor">Floor</option>
+            <option value="wall">Wall</option>
+            <option value="pillar">Pillar</option>
+            <!--<option value="stair">Stair</option>-->
+        </select>
+
+        <label for="rangex">X</label>
+        <input type="range" id="rangex"></input>
+        <label for="rangey">Y</label>
+        <input type="range" id="rangey"></input>
+    </div>
+    <button class="button" id="resetaxis">Reset Axis Changes</button>
+    <img id="img">
+</body>
+<script>
+    function updateHeight() {
+        document.body.style.height = window.innerHeight - 20 + "px";
+    }
+    window.onresize = updateHeight;
+    updateHeight();
+</script>
+<script>
+    function floorShape(unchangedbitmap, unchangedbase) {
+        let height = 2 * unchangedbase;
+        let width = (height - 1) * 2;
+        let output = new Array(height * width).fill(0);
+
+        let x = 0, y = 0, X = 0, Y = 0, tempy = 0, value;
+        for (y = 0; y < unchangedbase; y++) {
+            Y = 2 * y;
+            for (x = 0; x < unchangedbase; x++) {
+                X = 2 * x + Y;//For each Y,the X will move rightwards
+                tempy = y + unchangedbase - 1 - x;
+                value = unchangedbitmap[x + y * unchangedbase];
+                if (X + 1 < width / 2) {
+                    //value = 10;
+                }
+                else if (X + 1 > width / 2) {
+                    //value = 11;
+                }
+                else {
+                    tempy = Y;
+                }
+
+                output[X + tempy * width] = value;
+                output[X + 1 + tempy * width] = value;
+                output[X + (tempy + 1) * width] = value;
+                output[X + 1 + (tempy + 1) * width] = value;
+            }
+        }
+
+        //printBitmap(output,width,height);
+
+        return output;
+    }
+
+    function wallShape(unchangedbitmap, unchangedbase) {
+        let height = unchangedbase * 3;
+        let width = unchangedbase * 2;
+        let output = new Array(height * width).fill(0);
+
+        let x = 0, y = 0, X = 0, Y = 0, value;
+        for (y = 0; y < unchangedbase; y++) {
+            Y = 2 * y;
+            for (x = 0; x < unchangedbase; x++) {
+                X = 2 * x;
+
+                value = unchangedbitmap[x + y * unchangedbase];
+
+                output[X + (Y + x) * width] = value;
+                output[X + ((Y + x) + 1) * width] = value;
+                output[X + 1 + (Y + x + 1) * width] = value;
+                output[X + 1 + ((Y + x) + 2) * width] = value;
+            }
+        }
+
+        //printBitmap(output,width,height);
+
+        return output;
+    }
+
+    function stairShape(unchangedbitmap, unchangedbase) {
+        let height = unchangedbase * 3 - 2;
+        let width = unchangedbase * 2.5;
+        let output = new Array(height * width).fill(0);
+
+        let x = 0, y = 0, X = 0, Y = 0, value;
+        for (y = 0; y < unchangedbase; y++) {
+            Y = 2 * y;
+            for (x = 0; x < unchangedbase; x++) {
+                X = 2 * x;
+
+                value = unchangedbitmap[x + y * unchangedbase];
+
+                if (y % 2 > 0) {
+                    output[X + (Y + x) * width] = value;
+                    output[X + ((Y + x) + 1) * width] = value;
+                    output[X + 1 + (Y + x) * width] = value;
+                    output[X + 1 + ((Y + x) + 1) * width] = value;
+                }
+                else {
+                    output[X + (Y + x) * width] = value;
+                    output[X + ((Y + x) + 1) * width] = value;
+                    output[X + 1 + (Y + x) * width] = value;
+                    output[X + 1 + ((Y + x) + 1) * width] = value;
+                }
+            }
+        }
+
+        //printBitmap(output,width,height);
+
+        return output;
+    }
+
+    function pillarShape(unchangedbitmap, unchangedbase) {
+        let height = unchangedbase * 2.5;
+        let width = unchangedbase * 2;
+        let output = new Array(height * width).fill(0);
+
+        let x = 0, y = 0, X = 0, Y = 0, value, mod = 0;
+        for (y = 0; y < unchangedbase; y++) {
+            Y = 2 * y;
+            for (x = 0; x < unchangedbase; x++) {
+                X = 2 * x;
+
+                value = unchangedbitmap[x + y * unchangedbase];
+
+                mod = unchangedbase - x;
+
+                if (x < unchangedbase / 2) {
+                    output[X + (Y + x) * width] = value;
+                    output[X + ((Y + x) + 1) * width] = value;
+                    output[X + 1 + ((Y + x) + 1) * width] = value;
+                    output[X + 1 + ((Y + x) + 2) * width] = value;
+                }
+                else {
+                    output[X + (Y + mod) * width] = value;
+                    output[X + ((Y + mod) + 1) * width] = value;
+                    output[X + 1 + ((Y + mod)) * width] = value;
+                    output[X + 1 + ((Y + mod) - 1) * width] = value;
+                }
+            }
+        }
+
+        //printBitmap(output,width,height);
+
+        return output;
+    }
+
+    function compressBitmap(uncompressed) {
+        let compressed = new Array(uncompressed.length / 4).fill(0);
+        let i = 0;
+        for (i = 0; i < compressed.length; i++) {
+            compressed[i] += uncompressed[i * 4 + 0] * 0x01_00_00_00;
+            compressed[i] += uncompressed[i * 4 + 1] * 0x00_01_00_00;
+            compressed[i] += uncompressed[i * 4 + 2] * 0x00_00_01_00;
+            compressed[i] += uncompressed[i * 4 + 3] * 0x00_00_00_01;
+        }
+
+        return compressed;
+    }
+
+    function uncompressBitmap(compressed) {
+        let uncompressed = new Array(compressed.length * 4).fill(0);
+        let i = 0;
+        for (i = 0; i < compressed.length; i++) {
+            uncompressed[i * 4 + 0] = (compressed[i] / 0x01_00_00_00) & 0xff;
+            uncompressed[i * 4 + 1] = (compressed[i] / 0x00_01_00_00) & 0xff;
+            uncompressed[i * 4 + 2] = (compressed[i] / 0x00_00_01_00) & 0xff;
+            uncompressed[i * 4 + 3] = (compressed[i] / 0x00_00_00_01) & 0xff;
+        }
+
+        return uncompressed;
+    }
+
+    function printBitmap(bitmap, width, height) {
+        let x = 0;
+        let y = 0;
+        let toprint = new String();
+        for (y = 0; y < height; y++) {
+            for (x = 0; x < width; x++) {
+                if (bitmap[x + y * width] == 0) {
+                    toprint += '.';
+                }
+                else {
+                    toprint += bitmap[x + y * width].toString(32).toUpperCase();
+                }
+            }
+            toprint += '\n';
+        }
+        console.log(toprint);
+    }
+
+    /*
+    let bitm = new Array(16*16);
+    bitm = [
+        1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,0,
+        1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,0,
+        1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        1,1,1,0,1,1,1,1,1,1,1,0,1,1,1,1,
+        1,1,1,0,1,1,1,1,1,1,1,0,1,1,1,1,
+        1,1,1,0,1,1,1,1,1,1,1,0,1,1,1,1,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,0,
+        1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,0,
+        1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        1,1,1,0,1,1,1,1,1,1,1,0,1,1,1,1,
+        1,1,1,0,1,1,1,1,1,1,1,0,1,1,1,1,
+        1,1,1,0,1,1,1,1,1,1,1,0,1,1,1,1,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+    ];
+    bitm.fill(1);
+    printBitmap(bitm,16,16);
+    console.log("\n\nPost Process\n\n");
+    pillarShape(bitm,16);
+    */
+</script>
+<script>
+    let tile = document.getElementById('tile');
+
+    let originalimg = document.createElement('img');
+    let img = document.getElementById('img');
+
+    let Input = document.createElement("input");
+    Input.type = 'file';
+
+    let Reader = new FileReader();
+    let originalURL = null;
+
+    let scale = document.getElementById('scale');
+    let scaleValue = 16;
+
+    let canvas = document.createElement('canvas');
+    let context = null;
+
+    let showcanvas = document.createElement('canvas');
+    let showcontext = null;
+
+    let rangex = document.getElementById('rangex');
+    let rangey = document.getElementById('rangey');
+
+    document.getElementById('resetaxis').onclick = function () {
+        rangex.value = 0;
+        rangey.value = 0;
+        showImage(build(extractCompressedData()));
+    }
+
+    rangex.oninput = function () {
+        if (img.src != '') {
+            showImage(build(extractCompressedData()));
+        }
+    }
+
+    rangey.oninput = rangex.oninput;
+
+    Input.onchange = function () {
+        Reader.readAsDataURL(this.files[0]);
+        rangex.value = 0;
+        rangey.value = 0;
+    }
+
+    Reader.onloadend = function () {
+        originalURL = this.result;
+        originalimg.src = originalURL;
+    }
+
+    originalimg.onload = function () {
+        rescale();
+        canvas.width = originalimg.width;
+        canvas.height = originalimg.height;
+        context = canvas.getContext('2d');
+        context.drawImage(originalimg, 0, 0);
+
+        rangex.min = -originalimg.width / 2;
+        rangex.max = originalimg.width;
+
+        rangey.min = -originalimg.height / 2;
+        rangey.max = originalimg.height;
+
+        showImage(build(extractCompressedData()));
+    }
+
+    function extractCompressedData() {
+        let data = context.getImageData(parseInt(rangex.value), parseInt(rangey.value), scaleValue, scaleValue);
+        let compressed = compressBitmap(data.data);
+        return compressed;
+    }
+
+    function build(compressedPixels) {
+        let newCompressedData = null;
+        let width = 0;
+        let height = 0;
+
+        switch (tile.selectedIndex) {
+            case 0://Floor
+                height = 2 * scaleValue;
+                width = 2 * (height - 1);
+                newCompressedData = floorShape(compressedPixels, scaleValue);
+                break;
+            case 1://Wall
+                height = 3 * scaleValue;
+                width = 2 * scaleValue;
+                newCompressedData = wallShape(compressedPixels, scaleValue);
+                break;
+            case 2://Pillar
+                height = 2.5 * scaleValue;
+                width = 2 * scaleValue;
+                newCompressedData = pillarShape(compressedPixels, scaleValue);
+                break;
+
+            /*case 3://Stair
+                height = 3 * scaleValue - 2;
+                width = 2.5 * scaleValue;
+                newCompressedData = stairShape(compressedPixels, scaleValue);
+                break;*/
+            default: return null;
+        }
+
+        let uncompressed = uncompressBitmap(newCompressedData);
+        let data = new ImageData(width, height);
+        for (let i = 0; i < uncompressed.length; i++) {
+            data.data[i] = uncompressed[i];
+        }
+
+        return data;
+    }
+
+    function showImage(imgdata) {
+        showcanvas.width = imgdata.width;
+        showcanvas.height = imgdata.height;
+        showcontext = showcanvas.getContext('2d');
+        showcontext.putImageData(imgdata, 0, 0);
+        img.src = showcanvas.toDataURL();
+    }
+
+    function rescale() {
+        if (originalimg.width < scaleValue && originalimg.height < scaleValue) {
+            if (originalimg.width > originalimg.height) {
+                scaleValue = originalimg.height;
+                scale.value = scaleValue;
+            }
+            else {
+                scaleValue = originalimg.width;
+                scale.value = scaleValue;
+            }
+        }
+    }
+
+    scale.onchange = function () {
+        scaleValue = parseInt(scale.value);
+        if (img.src != '') {
+            rescale();
+            showImage(build(extractCompressedData()));
+        }
+    }
+
+    tile.onchange = function () {
+        if (img.src != '') {
+            showImage(build(extractCompressedData()));
+        }
+    }
+
+</script>
+
+</html>
