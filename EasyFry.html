@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EasySprites</title>
+    <style>
+        ::-webkit-scrollbar {
+            display: none;
+        }
+
+        .untouchable {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        .input {
+            margin: -1px 0 0 -1px;
+            border: 1px solid #293f55;
+            background-color: #2e4457;
+            color: white;
+            text-align: center;
+            font-weight: bold;
+            transition-duration: 0.5s;
+        }
+
+        .input:hover {
+            background-color: #2A3741;
+        }
+
+        body {
+            background-color: #15202B;
+            display: grid;
+            grid-template-rows: 0.1fr 0.01fr 1fr;
+            grid-template-columns: 1fr;
+            font-family: monospace;
+            color: white;
+            overflow-x: scroll;
+        }
+
+        canvas,
+        img {
+            border: 2px solid black;
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        div div {
+            padding: 5px 5px;
+        }
+
+        .button {
+            background-color: #1D2A35;
+            color: white;
+            text-align: center;
+            font-weight: bold;
+            transition-duration: 0.5s;
+        }
+
+        .button:hover {
+            background-color: #2A3741;
+        }
+    </style>
+</head>
+
+<body>
+    <div
+        style="background-color: #1d2a35;border: 1px solid #2A3741;display: grid;grid-template-columns: 1fr 4fr;text-align: center;font-weight: bold;">
+        <label for="fileButton">Image File</label>
+        <button class="button" onclick="Input.click()">Insert File</button>
+
+        <label for="channel">Channel step</label>
+        <input class="input" type="spinner" id="channel" value="1">
+    </div>
+    <img id="img">
+</body>
+<script>
+    function updateHeight() {
+        document.body.style.height = window.innerHeight - 20 + "px";
+    }
+    window.onresize = updateHeight;
+    updateHeight();
+</script>
+<script>
+    let originalimg = document.createElement('img');
+    let img = document.getElementById('img');
+
+    let Input = document.createElement("input");
+    Input.type = 'file';
+
+    let Reader = new FileReader();
+    let originalURL = null;
+
+    let channel = document.getElementById('channel');
+    let channelValue = 1;
+
+    let canvas = document.createElement('canvas');
+    let context = null;
+
+    let showcanvas = document.createElement('canvas');
+    let showcontext = null;
+
+    Input.onchange = function () {
+        Reader.readAsDataURL(this.files[0]);
+    }
+
+    Reader.onloadend = function () {
+        originalURL = this.result;
+        originalimg.src = originalURL;
+    }
+
+    originalimg.onload = function () {
+        canvas.width = originalimg.width;
+        canvas.height = originalimg.height;
+        context = canvas.getContext('2d');
+        context.drawImage(originalimg, 0, 0);
+
+        showImage(build());
+    }
+
+    function build() {
+        let pre_data = context.getImageData(0, 0, originalimg.width, originalimg.height);
+        let width = pre_data.width;
+        let height = pre_data.height;
+
+        let data = new ImageData(width, height);
+        for (let i = 0; i < pre_data.data.length; i++) {
+            data.data[i] = Math.round(pre_data.data[i]/channelValue)*channelValue;
+        }
+
+        return data;
+    }
+
+    function showImage(imgdata) {
+        showcanvas.width = imgdata.width;
+        showcanvas.height = imgdata.height;
+        showcontext = showcanvas.getContext('2d');
+        showcontext.putImageData(imgdata, 0, 0);
+        img.src = showcanvas.toDataURL();
+    }
+
+    channel.onchange = function () {
+        channelValue = parseInt(channel.value);
+        if (img.src != '') {
+            showImage(build());
+        }
+    }
+
+</script>
+
+</html>
