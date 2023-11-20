@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EasySprites</title>
+    <style>
+        ::-webkit-scrollbar {
+            display: none;
+        }
+
+        .untouchable {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        .input {
+            margin: -1px 0 0 -1px;
+            border: 1px solid #293f55;
+            background-color: #2e4457;
+            color: white;
+            text-align: center;
+            font-weight: bold;
+            transition-duration: 0.5s;
+        }
+
+        .input:hover {
+            background-color: #2A3741;
+        }
+
+        body {
+            background-color: #15202B;
+            display: grid;
+            grid-template-rows: 0.1fr 0.01fr 1fr;
+            grid-template-columns: 1fr;
+            font-family: monospace;
+            color: white;
+            overflow-x: scroll;
+        }
+
+        canvas,
+        img {
+            border: 2px solid black;
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        div div {
+            padding: 5px 5px;
+        }
+
+        .button {
+            background-color: #1D2A35;
+            color: white;
+            text-align: center;
+            font-weight: bold;
+            transition-duration: 0.5s;
+        }
+
+        .button:hover {
+            background-color: #2A3741;
+        }
+    </style>
+</head>
+
+<body>
+    <div
+        style="background-color: #1d2a35;border: 1px solid #2A3741;display: grid;grid-template-columns: 1fr 4fr;text-align: center;font-weight: bold;">
+        <label for="fileButton">Image File</label>
+        <button class="button" onclick="Input.click()" id="fileButton">Insert File</button>
+
+        <label for="r_channel">Red channel step</label>
+        <input class="input" type="spinner" id="r_channel" value="1">
+        <label for="r_min">Red channel minimum</label>
+        <input class="input" type="spinner" id="r_min" value="0">
+        <label for="r_max">Red channel maximum</label>
+        <input class="input" type="spinner" id="r_max" value="255">
+
+        <label for="g_channel">Green channel step</label>
+        <input class="input" type="spinner" id="g_channel" value="1">
+        <label for="g_min">Green channel minimum</label>
+        <input class="input" type="spinner" id="g_min" value="0">
+        <label for="g_max">Green channel maximum</label>
+        <input class="input" type="spinner" id="g_max" value="255">
+
+        <label for="b_channel">Blue channel step</label>
+        <input class="input" type="spinner" id="b_channel" value="1">
+        <label for="b_min">Blue channel minimum</label>
+        <input class="input" type="spinner" id="b_min" value="0">
+        <label for="b_max">Blue channel maximum</label>
+        <input class="input" type="spinner" id="b_max" value="255">
+    </div>
+    <img id="img">
+</body>
+<script>
+    function updateHeight() {
+        document.body.style.height = window.innerHeight - 20 + "px";
+    }
+    window.onresize = updateHeight;
+    updateHeight();
+</script>
+<script>
+    let originalimg = document.createElement('img');
+    let img = document.getElementById('img');
+
+    let Input = document.createElement("input");
+    Input.type = 'file';
+
+    let Reader = new FileReader();
+    let originalURL = null;
+
+    let channels = [document.getElementById('r_channel'),document.getElementById('g_channel'),document.getElementById('b_channel')];
+    let mins = [document.getElementById('r_min'),document.getElementById('g_min'),document.getElementById('b_min')];
+    let maxs = [document.getElementById('r_max'),document.getElementById('g_max'),document.getElementById('b_max')];
+
+    let channelsValues = [1,1,1];
+    let minsValues = [0,0,0];
+    let maxsValues = [255,255,255];
+
+    let canvas = document.createElement('canvas');
+    let context = null;
+
+    let showcanvas = document.createElement('canvas');
+    let showcontext = null;
+
+    Input.onchange = function () {
+        Reader.readAsDataURL(this.files[0]);
+    }
+
+    Reader.onloadend = function () {
+        originalURL = this.result;
+        originalimg.src = originalURL;
+    }
+
+    originalimg.onload = function () {
+        canvas.width = originalimg.width;
+        canvas.height = originalimg.height;
+        context = canvas.getContext('2d');
+        context.drawImage(originalimg, 0, 0);
+
+        showImage(build());
+    }
+
+    function build() {
+        let pre_data = context.getImageData(0, 0, originalimg.width, originalimg.height);
+        let width = pre_data.width;
+        let height = pre_data.height;
+
+        let data = new ImageData(width, height);
+        let current = 0;
+        for (let i = 0; i < pre_data.data.length; i+=4) {
+            for(let l = 0;l<3;l++){
+                current = Math.round(pre_data.data[i+l]/channelsValues[l])*channelsValues[l];
+                if(current < minsValues[l]){
+                    current = minsValues[l];
+                }
+                else if(current > maxsValues[l]){
+                    current = maxsValues[l];
+                }
+                data.data[i+l] = current;
+            }
+            data.data[i+3] = pre_data.data[i+3];
+        }
+
+        return data;
+    }
+
+    function showImage(imgdata) {
+        showcanvas.width = imgdata.width;
+        showcanvas.height = imgdata.height;
+        showcontext = showcanvas.getContext('2d');
+        showcontext.putImageData(imgdata, 0, 0);
+        img.src = showcanvas.toDataURL();
+    }
+
+    function updtVal(){
+        channelsValues = [parseInt(channels[0].value),parseInt(channels[1].value),parseInt(channels[2].value)];
+        minsValues = [parseInt(mins[0].value),parseInt(mins[1].value),parseInt(mins[2].value)];
+        maxsValues = [parseInt(maxs[0].value),parseInt(maxs[1].value),parseInt(maxs[2].value)];
+        if (img.src != '') {
+            showImage(build());
+        }
+    }
+
+    for(let i = 0;i<3;i++){
+        channels[i].onchange = updtVal;
+        mins[i].onchange = updtVal;
+        maxs[i].onchange = updtVal;
+    }
+
+</script>
+
+</html>
