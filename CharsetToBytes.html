@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CharsetToBytes</title>
+    <style>
+        ::-webkit-scrollbar {
+            display: none;
+        }
+
+        .untouchable {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        .input {
+            margin: -1px 0 0 -1px;
+            border: 1px solid #293f55;
+            background-color: #2e4457;
+            color: white;
+            text-align: center;
+            font-weight: bold;
+            transition-duration: 0.5s;
+        }
+
+        .input:hover {
+            background-color: #2A3741;
+        }
+
+        body {
+            background-color: #15202B;
+            display: grid;
+            grid-template-rows: 0.1fr 1fr 1fr;
+            grid-template-columns: 1fr;
+            font-family: monospace;
+            color: white;
+            overflow-x: scroll;
+        }
+
+        textarea {
+            background-color: #1D2A35;
+            font-family: monospace;
+            color: white;
+        }
+
+        canvas,
+        img {
+            border: 2px solid black;
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        div div {
+            padding: 5px 5px;
+        }
+
+        .button {
+            background-color: #1D2A35;
+            color: white;
+            text-align: center;
+            font-weight: bold;
+            transition-duration: 0.5s;
+        }
+
+        .button:hover {
+            background-color: #2A3741;
+        }
+    </style>
+</head>
+
+<body>
+    <div
+        style="background-color: #1d2a35;border: 1px solid #2A3741;display: grid;grid-template-columns: 1fr 4fr;text-align: center;font-weight: bold;">
+        <label for="fileButton">Image File</label>
+        <button class="button" onclick="Input.click()">Insert File</button>
+    </div>
+    <textarea id="textarea"></textarea>
+    <img id="img">
+</body>
+<script>
+    function updateHeight() {
+        document.body.style.height = window.innerHeight - 20 + "px";
+    }
+    window.onresize = updateHeight;
+    updateHeight();
+</script>
+<script>
+    let CHARSIZE = 8;
+
+    let originalimg = document.createElement('img');
+    let img = document.getElementById('img');
+
+    let Input = document.createElement("input");
+    Input.type = 'file';
+
+    let Reader = new FileReader();
+    let originalURL = null;
+
+    let canvas = document.createElement('canvas');
+    let context = null;
+
+    let showcanvas = document.createElement('canvas');
+    let showcontext = null;
+
+    let textarea = document.getElementById("textarea");
+
+    Input.onchange = function () {
+        Reader.readAsDataURL(this.files[0]);
+    }
+
+    Reader.onloadend = function () {
+        originalURL = this.result;
+        originalimg.src = originalURL;
+    }
+
+    originalimg.onload = function () {
+        canvas.width = originalimg.width;
+        canvas.height = originalimg.height;
+        context = canvas.getContext('2d');
+        context.drawImage(originalimg, 0, 0);
+
+        showImage(build());
+    }
+
+    function build() {
+        let pre_data = context.getImageData(0, 0, originalimg.width, originalimg.height);
+        let width = pre_data.width;
+        let height = pre_data.height;
+
+        let charWidth = width / CHARSIZE;
+        let charHeight = height / CHARSIZE;
+
+        charWidth -= charWidth % 1;
+        charHeight -= charHeight % 1;
+
+        let chars = new Array(charWidth * charHeight);
+        for(let i = 0;i<chars.length;i++){
+            chars[i] = new Array(CHARSIZE).fill(0);
+        }
+
+        let data = new ImageData(width, height);
+        let num = 0;
+        
+        let currentX = 0;
+        let currentY = 0;
+
+        let charX = 0;
+        let charY = 0;
+
+        for (let i = 0; i < pre_data.data.length; i+=4) {
+            num = pre_data.data[i+2];
+            num |= (pre_data.data[i+1] << 8);
+            num |= (pre_data.data[i+0] << 16);
+            //num |= (pre_data.data[i+3] << 24);
+
+            if(num != 0){
+                data.data[i+0] = 255;//red
+                data.data[i+1] = 255;//green
+                data.data[i+2] = 255;//blue
+                data.data[i+3] = 255;//alpha 
+            }
+
+            currentY = (i / 4) / width;
+            currentY -= currentY % 1;
+
+            currentX = (i / 4) - (currentY * width);
+
+            charX = currentX / CHARSIZE;
+            charX -= charX % 1;
+
+            charY = currentY / CHARSIZE;
+            charY -= charY % 1;
+
+            chars[charX + (charY * charWidth)][currentY - (charY * CHARSIZE)] |= ((num != 0) ? 1 : 0) << (currentX - (charX * CHARSIZE));
+        }
+        console.log(chars);
+
+        textarea.textContent = "";
+
+        let c = null;
+        for(let i = 0;i<chars.length;i++){
+            textarea.textContent += "0x"
+            for(let l = CHARSIZE-1;l >= 0;l--){
+                c = chars[i][l].toString(16);
+                while(c.length < (CHARSIZE / 4)){
+                    c = "0"+c;
+                }
+                textarea.textContent += c;
+            }
+            textarea.textContent += "\n";
+        }
+        //textarea.textContent += `0x${num.toString(16)}\n`;
+
+        return data;
+    }
+
+    function showImage(imgdata) {
+        showcanvas.width = imgdata.width;
+        showcanvas.height = imgdata.height;
+        showcontext = showcanvas.getContext('2d');
+        showcontext.putImageData(imgdata, 0, 0);
+        img.src = showcanvas.toDataURL();
+    }
+
+</script>
+
+</html>
