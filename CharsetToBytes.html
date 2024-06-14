@@ -178,6 +178,10 @@
             charY = currentY / CHARSIZE;
             charY -= charY % 1;
 
+            if(charX == charWidth || charY == charHeight){//invalid
+                continue;
+            }
+
             chars[charX + (charY * charWidth)][currentY - (charY * CHARSIZE)] |= ((num != 0) ? 1 : 0) << (currentX - (charX * CHARSIZE));
         }
         console.log(chars);
