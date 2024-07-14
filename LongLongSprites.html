@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CharsetToBytes</title>
+    <style>
+        ::-webkit-scrollbar {
+            display: none;
+        }
+
+        .untouchable {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        .input {
+            margin: -1px 0 0 -1px;
+            border: 1px solid #293f55;
+            background-color: #2e4457;
+            color: white;
+            text-align: center;
+            font-weight: bold;
+            transition-duration: 0.5s;
+        }
+
+        .input:hover {
+            background-color: #2A3741;
+        }
+
+        body {
+            background-color: #15202B;
+            display: grid;
+            grid-template-rows: 0.01fr 1fr;
+            grid-template-columns: 1fr;
+            font-family: monospace;
+            color: white;
+            overflow-x: scroll;
+        }
+
+        textarea {
+            background-color: #1D2A35;
+            font-family: monospace;
+            color: white;
+        }
+
+        canvas,
+        img {
+            border: 2px solid black;
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        div div {
+            padding: 5px 5px;
+        }
+
+        .button {
+            background-color: #1D2A35;
+            color: white;
+            text-align: center;
+            font-weight: bold;
+            transition-duration: 0.5s;
+        }
+
+        .button:hover {
+            background-color: #2A3741;
+        }
+
+        tr {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1dvh;
+            color: white;
+            text-align: center;
+        }
+
+        td,
+        th {
+            border: 1px solid #38444D;
+        }
+
+        th {
+            background-color: #15202B;
+        }
+
+        td {
+            background-color: #1D2A35;
+            overflow-x: hidden;
+        }
+    </style>
+</head>
+
+<body>
+    <div
+        style="background-color: #1d2a35;border: 1px solid #2A3741;display: grid;grid-template-columns: 1fr 4fr;text-align: center;font-weight: bold;">
+        <label for="fileButton">Image File</label>
+        <button class="button" onclick="Input.click()">Insert File</button>
+    </div>
+    <table>
+        <tbody>
+            <tr>
+                <th>
+                    Position
+                </th>
+                <th>
+                    Sprite
+                </th>
+                <th>
+                    Code
+                </th>
+            </tr>
+        </tbody>
+        <tbody id="tablebody">
+        </tbody>
+    </table>
+</body>
+
+<script>
+    let SPRITE_SIZE = 16;
+
+    let originalimg = document.createElement('img');
+
+    let Input = document.createElement("input");
+    Input.type = 'file';
+
+    let Reader = new FileReader();
+    let originalURL = null;
+
+    let canvas = document.createElement('canvas');
+    let context = null;
+
+    let showcanvas = document.createElement('canvas');
+    let showcontext = null;
+
+    Input.onchange = function () {
+        Reader.readAsDataURL(this.files[0]);
+    }
+
+    Reader.onloadend = function () {
+        originalURL = this.result;
+        originalimg.src = originalURL;
+    }
+
+    originalimg.onload = function () {
+        canvas.width = originalimg.width;
+        canvas.height = originalimg.height;
+        context = canvas.getContext('2d');
+        context.drawImage(originalimg, 0, 0);
+        build();
+    }
+
+    function locateImage(imgdata) {
+        showcanvas.width = imgdata.width;
+        showcanvas.height = imgdata.height;
+        showcontext = showcanvas.getContext('2d');
+        showcontext.putImageData(imgdata, 0, 0);
+        return showcanvas.toDataURL();
+    }
+
+    let tablebody = document.getElementById('tablebody');
+
+    function pushSprite(x, y, colors) {
+        let imgdata = context.getImageData(x * SPRITE_SIZE, y * SPRITE_SIZE, SPRITE_SIZE, SPRITE_SIZE);
+        let outtext = "";
+        let step = 0;
+        let valid = false;
+        let indx = 0;
+        for (let i = 0; i < imgdata.data.length; i += 4) {
+            if (step == 16) {
+                step = 0;
+                outtext += "<br>";
+            }
+            num = imgdata.data[i + 2];
+            num |= (imgdata.data[i + 1] << 8);
+            num |= (imgdata.data[i + 0] << 16);
+            num |= (imgdata.data[i + 3] << 24);
+
+            indx = colors.indexOf(num);
+
+            if (!valid && indx > 0) {
+                valid = true;
+            }
+            if (indx == -1) {
+                colors.push(num);
+                indx = colors.indexOf(num);
+            }
+            outtext += (indx & (SPRITE_SIZE - 1)).toString(16) + '';
+            step++;
+        }
+        if(!valid){
+            return;
+        }
+        tablebody.innerHTML += `<tr><td>X:${x}<br>Y:${y}</td><td><img src='${locateImage(imgdata)}'></img></td><td>${outtext}</td></tr>`;
+    }
+
+    function build() {
+        let pre_data = context.getImageData(0, 0, originalimg.width, originalimg.height);
+        let width = pre_data.width;
+        let height = pre_data.height;
+
+        let spriteWidth = width / SPRITE_SIZE;
+        let spriteHeight = height / SPRITE_SIZE;
+        spriteWidth -= spriteWidth % 1;
+        spriteHeight -= spriteHeight % 1;
+
+        let colors = new Array();
+        tablebody.innerHTML = '';
+
+        for (let y = 0; y < spriteHeight; y++) {
+            for (let x = 0; x < spriteWidth; x++) {
+                pushSprite(x, y, colors);
+            }
+        }
+    }
+</script>
+
+</html>
